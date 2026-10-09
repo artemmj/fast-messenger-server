@@ -5,7 +5,7 @@ from routers.auth import router as auth_router
 
 
 app = FastAPI(
-    # title="CRM Service",
+    title="FastMessenger API",
     # root_path="/api/v1/crm",
     # docs_url="/docs",
     # redoc_url="/redoc",

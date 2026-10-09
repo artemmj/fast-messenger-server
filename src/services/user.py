@@ -1,8 +1,10 @@
 import uuid
 from typing import List, Optional
 
-from schemas.user import UserResponse, UserCreateRequest, UserUpdateRequest
 from dao.user import UserDAO
+from dependencies.db import db_dependency
+from handlers.auth import AuthHandler
+from schemas.user import UserResponse, UserCreateRequest, UserUpdateRequest
 
 
 class UserAlreadyExistsError(Exception):
@@ -14,10 +16,11 @@ class UserNotFoundError(Exception):
 
 
 class UsersService:
-    def __init__(self, user_dao: UserDAO):
+    def __init__(self, user_dao: UserDAO, auth_handler: AuthHandler):
         self.user_dao = user_dao
+        self.auth_handler = auth_handler
 
-    async def get_by_id(self, user_id: int) -> UserResponse:
+    async def get_by_id(self, user_id: uuid.UUID) -> UserResponse:
         """Получение пользователя по ID"""
         user = await self.user_dao.get_by_id(user_id)
         if not user:
@@ -44,7 +47,7 @@ class UsersService:
                 "User with this email or phone already exists."
             )
 
-        hashed_password = data.password
+        hashed_password = await self.auth_handler.get_password_hash(data.password)
         new_user = UserCreateRequest(
             email=data.email,
             phone=data.phone,
@@ -76,3 +79,8 @@ class UsersService:
         if not user:
             raise UserNotFoundError(f"User with id {user_id} not found")
         await self.user_dao.delete(user)
+
+
+def get_users_service() -> UsersService:
+    """Фабрика сервиса."""
+    return UsersService(user_dao=UserDAO(db_dependency), auth_handler=AuthHandler())

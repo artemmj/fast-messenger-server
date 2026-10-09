@@ -1,10 +1,11 @@
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, status, Query
 from fastapi.exceptions import HTTPException
 
-from dependencies.user import get_users_service
-from services.user import UsersService, UserAlreadyExistsError, UserNotFoundError
+from dependencies.auth import get_current_user
+from services.user import UsersService, UserAlreadyExistsError, UserNotFoundError, get_users_service
 from schemas.user import (
     UserCreateRequest,
     UserResponse,
@@ -13,6 +14,13 @@ from schemas.user import (
 )
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.get("/me", response_model=UserResponse)
+async def me(
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> UserResponse:
+    return current_user
 
 
 @router.get("/", response_model=UserPaginatedResponse)

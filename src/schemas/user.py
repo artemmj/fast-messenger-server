@@ -32,7 +32,7 @@ class UserCreateRequest(BaseModel):
     email: str = Field(..., min_length=5, example="john@example.com")
     phone: Optional[str] = Field(None, min_length=5, example="+79112223344")
 
-    password: Annotated[str, StringConstraints(min_length=3, max_length=32)]
+    password: Annotated[str, StringConstraints(min_length=3, max_length=255)]
 
 
 class UserUpdateRequest(BaseModel):

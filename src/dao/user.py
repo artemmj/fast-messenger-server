@@ -35,6 +35,28 @@ class UserDAO(BaseDAO[User]):
             result = await session.execute(stmt)
             return result.scalar()
 
+    async def get_by_email(self, email: str) -> Optional[Dict]:
+        async with self.db.session_scope() as session:
+            result = await session.execute(
+                select(self.model).where(self.model.email == email)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                return None
+            return {
+                "id": user.id,
+                "email": user.email,
+                "phone": user.phone,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+                "is_active": user.is_active,
+                "is_superuser": user.is_superuser,
+                "is_banned": user.is_banned,
+                "is_verified": user.is_verified,
+
+                "password_hash": user.password_hash,
+            }
+
     async def get_paginated_list(
         self, page: int, per_page: int, search: Optional[str] = None
     ) -> Tuple[List[Dict], int]:

@@ -34,7 +34,7 @@ class BaseDAO(Generic[T]):
             await session.refresh(obj)
             return self._model_to_dict(obj)
 
-    async def get_by_id(self, id: int) -> Optional[Type[T]]:
+    async def get_by_id(self, id) -> Optional[Type[T]]:
         async with self.db.session_scope() as session:
             result = await session.execute(
                 select(self.model).where(self.model.id == id)
