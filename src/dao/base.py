@@ -48,6 +48,10 @@ class BaseDAO(Generic[T]):
             await session.refresh(merged)
             return self._model_to_dict(merged)
 
+    async def delete(self, obj: T) -> None:
+        async with self.db.session_scope() as session:
+            await session.delete(obj)
+
     # async def get_all(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
     #     """Получение всех — возвращает список словарей"""
     #     async with self.db.read_only_scope() as session:

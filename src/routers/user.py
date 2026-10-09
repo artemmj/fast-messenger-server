@@ -12,7 +12,7 @@ from schemas.user import (
     UserUpdateRequest,
 )
 
-router = APIRouter(prefix="/api/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("/", response_model=UserPaginatedResponse)
@@ -64,3 +64,13 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except UserAlreadyExistsError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+
+@router.delete("/{id}", response_model=None)
+async def delete_user(
+    id: uuid.UUID, users_service: UsersService = Depends(get_users_service)
+):
+    try:
+        return await users_service.delete(id)
+    except UserNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

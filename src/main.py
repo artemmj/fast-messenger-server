@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter
 
 from routers.user import router as users_router
+from routers.auth import router as auth_router
 
 
 app = FastAPI(
@@ -20,4 +21,5 @@ async def health():
 
 
 app.include_router(router)
+app.include_router(auth_router)
 app.include_router(users_router)

@@ -7,8 +7,6 @@ from pydantic import BaseModel, Field, StringConstraints
 
 class UserResponse(BaseModel):
     id: uuid.UUID
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
     email: str
     phone: Optional[str] = None
 
@@ -16,6 +14,9 @@ class UserResponse(BaseModel):
     is_banned: bool
     is_superuser: bool
     is_verified: bool
+
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
     model_config = {"from_attributes": True}
 

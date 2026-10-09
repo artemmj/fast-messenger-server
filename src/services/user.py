@@ -1,3 +1,4 @@
+import uuid
 from typing import List, Optional
 
 from schemas.user import UserResponse, UserCreateRequest, UserUpdateRequest
@@ -30,7 +31,6 @@ class UsersService:
         per_page: int = 20,
         search: Optional[str] = None,
     ) -> tuple[List[UserResponse], int]:
-        """Получение списка пользователей с пагинацией"""
         users_dict, total = await self.user_dao.get_paginated_list(
             page=page,
             per_page=per_page,
@@ -39,7 +39,6 @@ class UsersService:
         return [UserResponse(**u) for u in users_dict], total
 
     async def create(self, data: UserCreateRequest) -> UserResponse:
-        """Регистрация нового пользователя"""
         if await self.user_dao.check_uniques(data.email, data.phone):
             raise UserAlreadyExistsError(
                 "User with this email or phone already exists."
@@ -69,6 +68,11 @@ class UsersService:
         update_data = {k: v for k, v in data.__dict__.items() if v is not None}
         for field, value in update_data.items():
             setattr(user, field, value)
-
         updated_dict = await self.user_dao.update(user)
         return UserResponse(**updated_dict)
+
+    async def delete(self, user_id: uuid.UUID) -> None:
+        user = await self.user_dao.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(f"User with id {user_id} not found")
+        await self.user_dao.delete(user)

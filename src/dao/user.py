@@ -30,23 +30,10 @@ class UserDAO(BaseDAO[User]):
             if phone is not None and phone.strip():
                 conditions.append(self.model.phone == phone)
             stmt = select(
-                exists().where(
-                    self.model.id != exclude_user_id,
-                    or_(*conditions)
-                )
+                exists().where(self.model.id != exclude_user_id, or_(*conditions))
             )
             result = await session.execute(stmt)
             return result.scalar()
-
-    # async def get_by_id(self, id: int) -> Optional[Dict[str, Any]]:
-    #     async with self.db.read_only_scope() as session:
-    #         result = await session.execute(
-    #             select(self.model).where(self.model.id == id)
-    #         )
-    #         obj = result.scalar_one_or_none()
-    #         if obj:
-    #             return self._model_to_dict(obj)
-    #         return None
 
     async def get_paginated_list(
         self, page: int, per_page: int, search: Optional[str] = None
