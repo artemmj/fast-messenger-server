@@ -25,7 +25,7 @@ class UserPaginatedResponse(BaseModel):
     total: int
     page: int
     per_page: int
-    users: list[UserResponse]
+    items: list[UserResponse]
 
 
 class UserCreateRequest(BaseModel):

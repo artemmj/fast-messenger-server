@@ -45,15 +45,12 @@ async def get_current_user(
         id=user.id,
         email=user.email,
         phone=user.phone,
-
         is_active=user.is_active,
         is_banned=user.is_banned,
         is_superuser=user.is_superuser,
         is_verified=user.is_verified,
-
         created_at=user.created_at,
         updated_at=user.updated_at,
-
         session_id=session_id,
         # roles=user["roles"],
     )

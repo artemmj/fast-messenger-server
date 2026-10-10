@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, status, Query
 from fastapi.exceptions import HTTPException
 
 from dependencies.auth import get_current_user
-from services.user import UsersService, UserAlreadyExistsError, UserNotFoundError, get_users_service
+from services.user import (
+    UsersService,
+    UserAlreadyExistsError,
+    UserNotFoundError,
+    get_users_service,
+)
 from schemas.user import (
     UserCreateRequest,
     UserResponse,

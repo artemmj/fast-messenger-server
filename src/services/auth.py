@@ -18,7 +18,9 @@ class AccountDisabledOrBannedException(HTTPException):
 
 
 class AuthService:
-    def __init__(self, user_dao: UserDAO, auth_handler: AuthHandler, redis: RedisDependency):
+    def __init__(
+        self, user_dao: UserDAO, auth_handler: AuthHandler, redis: RedisDependency
+    ):
         self.user_dao = user_dao
         self.auth_handler = auth_handler
         self.redis = redis
@@ -58,4 +60,8 @@ class AuthService:
 
 def get_auth_service() -> AuthService:
     """Фабрика сервиса."""
-    return AuthService(user_dao=UserDAO(db_dependency), auth_handler=AuthHandler(), redis=redis_dependency)
+    return AuthService(
+        user_dao=UserDAO(db_dependency),
+        auth_handler=AuthHandler(),
+        redis=redis_dependency,
+    )

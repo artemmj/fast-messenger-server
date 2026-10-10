@@ -55,6 +55,7 @@ class UsersService:
         )
         new_user_dict = new_user.__dict__
         new_user_dict["password_hash"] = new_user_dict.pop("password")
+        new_user_dict["is_active"] = True
         user_dict = await self.user_dao.create(**new_user_dict)
         return UserResponse(**user_dict)
 

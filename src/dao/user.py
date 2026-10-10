@@ -16,11 +16,12 @@ class UserDAO(BaseDAO[User]):
 
     async def check_uniques(self, email: str, phone: str | None) -> bool:
         async with self.db.read_only_scope() as session:
-            stmt = select(exists().where(or_(self.model.email == email)))
+            conditions = [self.model.email == email]
             if phone:
-                stmt = stmt._or(self.model.phone == phone)
+                conditions.append(self.model.phone == phone)
+            stmt = select(exists().where(or_(*conditions)))
             result = await session.execute(stmt)
-            return result.scalar()
+            return bool(result.scalar())
 
     async def check_uniques_excluding_user(
         self, email: str, phone: str | None, exclude_user_id: int
@@ -53,7 +54,6 @@ class UserDAO(BaseDAO[User]):
                 "is_superuser": user.is_superuser,
                 "is_banned": user.is_banned,
                 "is_verified": user.is_verified,
-
                 "password_hash": user.password_hash,
             }
 
