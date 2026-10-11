@@ -54,3 +54,9 @@ class UserUpdateRequest(BaseModel):
     @classmethod
     def validate_phone(cls, v):
         return normalize_and_validate_russian_phone(v)
+
+
+class UserRegisterResponse(BaseModel):
+    user: UserResponse
+    access_token: str
+    session_id: str

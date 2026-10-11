@@ -4,3 +4,7 @@ class UserAlreadyExistsError(Exception):
 
 class UserNotFoundError(Exception):
     pass
+
+
+class UpdateUserNeedFields(Exception):
+    pass

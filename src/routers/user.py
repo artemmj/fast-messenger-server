@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, status, Query
 from fastapi.exceptions import HTTPException
 
 from dependencies.auth import get_current_user
+from handlers.auth import AuthHandler
 from services.user import (
     UsersService,
     UserAlreadyExistsError,
     UserNotFoundError,
+    UpdateUserNeedFields,
     get_users_service,
 )
 from schemas.user import (
@@ -16,9 +18,28 @@ from schemas.user import (
     UserResponse,
     UserPaginatedResponse,
     UserUpdateRequest,
+    UserRegisterResponse,
 )
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.post(
+    "/register",
+    response_model=UserRegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_user(
+    data: UserCreateRequest,
+    users_service: UsersService = Depends(get_users_service),
+    auth_handler: AuthHandler = Depends(),  # Инжектируем ваш AuthHandler
+):
+    try:
+        new_user = await users_service.create(data)
+        access_token, session_id = await auth_handler.create_access_token(new_user.id)
+        return UserRegisterResponse(user=new_user, access_token=access_token, session_id=session_id)
+    except UserAlreadyExistsError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/me", response_model=UserResponse)
@@ -77,6 +98,8 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except UserAlreadyExistsError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except UpdateUserNeedFields as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete("/{id}", response_model=None)

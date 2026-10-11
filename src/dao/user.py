@@ -41,9 +41,9 @@ class UserDAO(BaseDAO[User]):
         self, phone: str, email: str | None, exclude_user_id: int
     ) -> bool:
         async with self.db.read_only_scope() as session:
-            conditions = [self.model.email == email]
-            if phone is not None and phone.strip():
-                conditions.append(self.model.phone == phone)
+            conditions = [self.model.phone == phone]
+            if email is not None and email.strip():
+                conditions.append(self.model.email == email)
             stmt = select(
                 exists().where(self.model.id != exclude_user_id, or_(*conditions))
             )

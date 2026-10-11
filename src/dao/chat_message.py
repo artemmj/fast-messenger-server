@@ -66,9 +66,7 @@ class ChatMessageDAO(BaseDAO[ChatMessage]):
             )
             result = await session.execute(stmt)
             messages = result.scalars().all()
-            return [
-                ChatMessageResponse(**self._model_to_dict(m)) for m in messages
-            ]
+            return [ChatMessageResponse(**self._model_to_dict(m)) for m in messages]
 
     async def get_message_with_sender(self, message_id: UUID) -> Optional[Dict]:
         """Получить одно конкретное сообщение вместе с данными отправителя"""

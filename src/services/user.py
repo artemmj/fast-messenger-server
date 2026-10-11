@@ -5,7 +5,11 @@ from dao.user import UserDAO
 from dependencies.db import db_dependency
 from handlers.auth import AuthHandler
 from schemas.user import UserResponse, UserCreateRequest, UserUpdateRequest
-from exceptions.user import UserAlreadyExistsError, UserNotFoundError
+from exceptions.user import (
+    UserAlreadyExistsError,
+    UserNotFoundError,
+    UpdateUserNeedFields,
+)
 
 
 class UsersService:
@@ -35,7 +39,7 @@ class UsersService:
         return [UserResponse(**u) for u in users_dict], total
 
     async def create(self, data: UserCreateRequest) -> UserResponse:
-        if await self.user_dao.check_uniques(data.email, data.phone):
+        if await self.user_dao.check_uniques(data.phone, data.email):
             raise UserAlreadyExistsError(
                 "User with this email or phone already exists."
             )
@@ -56,6 +60,9 @@ class UsersService:
         user = await self.user_dao.get_by_id(user_id)
         if not user:
             raise UserNotFoundError(f"User with id {user_id} not found")
+
+        if not data.email and not data.phone:
+            raise UpdateUserNeedFields("Update user needs fields.")
 
         if await self.user_dao.check_uniques_excluding_user(
             data.email, data.phone, user_id
