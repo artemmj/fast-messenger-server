@@ -52,3 +52,9 @@ class ChatMembershipDAO(BaseDAO[ChatMembership]):
             )
             result = await session.execute(stmt)
             return bool(result.scalar())
+
+    async def get_chat_member_ids(self, chat_id: UUID) -> List[UUID]:
+        async with self.db.read_only_scope() as session:
+            stmt = select(self.model.user_id).where(self.model.chat_id == chat_id)
+            result = await session.execute(stmt)
+            return list(result.scalars().all())

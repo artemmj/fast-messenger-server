@@ -46,27 +46,21 @@ class ChatMessageDAO(BaseDAO[ChatMessage]):
     async def get_chat_history(
         self, chat_id: UUID, limit: int = 50, offset: int = 0
     ) -> List[ChatMessageResponse]:
-        """
-        Получить историю сообщений конкретного чата с пагинацией.
-        Загружает данные автора сообщения (User) через selectinload.
-        Сортировка по времени: от старых к новым.
-        """
         async with self.db.read_only_scope() as session:
             stmt = (
                 select(self.model)
-                .options(
-                    selectinload(self.model.sender)
-                )  # Подгружаем профиль отправителя
+                .options(selectinload(self.model.sender))
                 .where(self.model.chat_id == chat_id)
-                .order_by(
-                    self.model.created_at.asc()
-                )  # Для чатов обычно asc, для ленты новостей desc
+                .order_by(self.model.created_at.desc(), self.model.id.desc())
                 .limit(limit)
                 .offset(offset)
             )
             result = await session.execute(stmt)
             messages = result.scalars().all()
-            return [ChatMessageResponse(**self._model_to_dict(m)) for m in messages]
+            return [
+                ChatMessageResponse(**self._model_to_dict(message))
+                for message in reversed(messages)
+            ]
 
     async def get_message_with_sender(self, message_id: UUID) -> Optional[Dict]:
         """Получить одно конкретное сообщение вместе с данными отправителя"""

@@ -37,7 +37,9 @@ async def register_user(
     try:
         new_user = await users_service.create(data)
         access_token, session_id = await auth_handler.create_access_token(new_user.id)
-        return UserRegisterResponse(user=new_user, access_token=access_token, session_id=session_id)
+        return UserRegisterResponse(
+            user=new_user, access_token=access_token, session_id=session_id
+        )
     except UserAlreadyExistsError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 

@@ -7,6 +7,9 @@ from services.chat_message import ChatMessagesService, get_chat_messages_service
 from schemas.chat import ChatMessageResponse, ChatMessageCreate
 from schemas.user import UserResponse
 from dependencies.auth import get_current_user
+from dao.chat_membership import ChatMembershipDAO
+from dependencies.db import db_dependency
+from services.websocket import ws_manager
 
 router = APIRouter(prefix="/chats", tags=["Messages"])
 
@@ -20,15 +23,48 @@ async def send_message(
     chat_id: UUID,
     data: ChatMessageCreate,
     current_user: UserResponse = Depends(get_current_user),
-    service: ChatMessagesService = Depends(get_chat_messages_service),
+    message_service: ChatMessagesService = Depends(get_chat_messages_service),
 ):
     """Отправить сообщение в указанный чат"""
+    saved_message = await message_service.send_message(
+        user_id=current_user.id, chat_id=chat_id, data=data
+    )
+
     try:
-        return await service.send_message(
-            user_id=current_user.id, chat_id=chat_id, data=data
+        membership_dao = ChatMembershipDAO(db_dependency)
+        member_ids = await membership_dao.get_chat_member_ids(chat_id=chat_id)
+
+        message_payload = {
+            "event": "new_message",
+            "chat_id": chat_id,
+            "data": saved_message.model_dump(mode="json"),
+        }
+
+        signal_payload = {
+            "event": "chat_signal",
+            "chat_id": chat_id,
+            "data": {
+                "last_message_text": data.text[:50],
+                "last_message_time": saved_message.created_at.isoformat(),
+                "sender_id": str(current_user.id),
+            },
+        }
+
+        await ws_manager.broadcast_to_chat(
+            message=message_payload, member_ids=member_ids
         )
+        await ws_manager.broadcast_to_chat(
+            message=signal_payload, member_ids=member_ids
+        )
+
     except ChatAccessDeniedError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        print(f"🚨 Ошибка реалтайм-рассылки через HTTP-роут: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    # 3. Возвращаем стандартный ответ инициатору HTTP-запроса
+    return saved_message
 
 
 @router.get("/{chat_id}/get_messages", response_model=List[ChatMessageResponse])

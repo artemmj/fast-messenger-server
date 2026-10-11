@@ -7,3 +7,7 @@ class WrongEmailPasswordException(HTTPException):
 
 class AccountDisabledOrBannedException(HTTPException):
     pass
+
+
+class WebSocketAuthError(Exception):
+    pass

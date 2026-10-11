@@ -5,6 +5,7 @@ from routers.user import router as users_router
 from routers.auth import router as auth_router
 from routers.chat import router as chat_router
 from routers.chat_message import router as message_router
+from routers.websocket import router as websocket_router
 
 
 origins = [
@@ -44,3 +45,4 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(chat_router)
 app.include_router(message_router)
+app.include_router(websocket_router)

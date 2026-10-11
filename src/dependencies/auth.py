@@ -1,6 +1,7 @@
+import uuid
 from typing import Annotated
 
-from fastapi import HTTPException, Depends
+from fastapi import WebSocket, HTTPException, Depends, Query
 from starlette import status
 from starlette.requests import Request
 
@@ -8,6 +9,7 @@ from services.auth import AuthService, get_auth_service
 from services.user import UsersService, get_users_service
 from handlers.auth import AuthHandler
 from schemas.user import UserResponse
+from exceptions.auth import WebSocketAuthError
 
 
 async def get_token_from_headers(request: Request) -> str:
@@ -54,3 +56,28 @@ async def get_current_user(
         session_id=session_id,
         # roles=user["roles"],
     )
+
+
+async def get_ws_current_user(
+    websocket: WebSocket, token: str = Query(..., description="JWT access token")
+) -> uuid.UUID:
+    """Валидация токена для WebSocket-соединения без вызова HTTP-ошибок"""
+    auth_handler = AuthHandler()
+    try:
+        payload = await auth_handler.decode_access_token(token)
+        user_id_str = payload.get("sub")
+
+        if not user_id_str:
+            print("🚨 WS Auth Error: В токене отсутствует поле 'sub'")
+            await websocket.accept()
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            raise WebSocketAuthError()
+
+        return uuid.UUID(user_id_str)
+    except Exception:
+        try:
+            await websocket.accept()
+        except Exception:
+            pass
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        raise WebSocketAuthError()
