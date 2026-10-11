@@ -5,14 +5,7 @@ from dao.user import UserDAO
 from dependencies.db import db_dependency
 from handlers.auth import AuthHandler
 from schemas.user import UserResponse, UserCreateRequest, UserUpdateRequest
-
-
-class UserAlreadyExistsError(Exception):
-    pass
-
-
-class UserNotFoundError(Exception):
-    pass
+from exceptions.user import UserAlreadyExistsError, UserNotFoundError
 
 
 class UsersService:

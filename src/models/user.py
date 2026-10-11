@@ -9,11 +9,11 @@ if TYPE_CHECKING:
 
 
 class User(Base, FullMixin):
-    email: Mapped[str] = mapped_column(
-        String(127), unique=True, nullable=False, index=True
-    )
     phone: Mapped[str] = mapped_column(
-        String(15), unique=True, nullable=True, index=True
+        String(15), unique=True, nullable=False, index=True
+    )
+    email: Mapped[str] = mapped_column(
+        String(127), unique=True, nullable=True, index=True
     )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 

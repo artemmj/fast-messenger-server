@@ -25,7 +25,7 @@ async def send_message(
     """Отправить сообщение в указанный чат"""
     try:
         return await service.send_message(
-            sender_id=current_user.id, chat_id=chat_id, data=data
+            user_id=current_user.id, chat_id=chat_id, data=data
         )
     except ChatAccessDeniedError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))

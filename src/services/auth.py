@@ -1,20 +1,16 @@
 import uuid
 
-from fastapi import status, HTTPException
+from fastapi import status
 
 from dao.user import UserDAO
 from dependencies.db import db_dependency
 from dependencies.redis import redis_dependency, RedisDependency
 from handlers.auth import AuthHandler
 from schemas.auth import LoginRequest, LoginResponse
-
-
-class WrongEmailPasswordException(HTTPException):
-    pass
-
-
-class AccountDisabledOrBannedException(HTTPException):
-    pass
+from exceptions.auth import (
+    AccountDisabledOrBannedException,
+    WrongEmailPasswordException,
+)
 
 
 class AuthService:
@@ -36,7 +32,7 @@ class AuthService:
             return await client.get(f"{user_id}:{session_id}")
 
     async def login(self, creds: LoginRequest) -> LoginResponse:
-        exist_user = await self.user_dao.get_by_email(email=creds.email)
+        exist_user = await self.user_dao.get_by_phone(phone=creds.phone)
         if exist_user is None or not await self.auth_handler.verify_password(
             creds.password, exist_user["password_hash"]
         ):

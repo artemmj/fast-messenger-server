@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from typing import List
 from dao.chat_message import ChatMessageDAO
 from dependencies.db import db_dependency
@@ -10,24 +12,20 @@ class ChatMessagesService:
         self.message_dao = message_dao
 
     async def send_message(
-        self, sender_id: int, chat_id: int, data: ChatMessageCreate
+        self, user_id: UUID, chat_id: int, data: ChatMessageCreate
     ) -> ChatMessageResponse:
-        """Отправка сообщения в чат с предварительной проверкой доступа"""
-        # Проверяем, состоит ли отправитель в этом чате
+        """Отправка сообщения в чат с предварительной проверкой доступа."""
         is_allowed = await self.message_dao.is_user_in_chat(
-            user_id=sender_id, chat_id=chat_id
+            user_id=user_id, chat_id=chat_id
         )
         if not is_allowed:
             raise ChatAccessDeniedError("У вас нет доступа к этому чату")
 
         message = await self.message_dao.create_message(
-            sender_id=sender_id, chat_id=chat_id, message_data=data
+            user_id=user_id, chat_id=chat_id, message_data=data
         )
-
-        # Подгружаем связанные данные (например, профиль sender), если необходимо для ответа
         full_message = await self.message_dao.get_message_with_sender(message.id)
-        msg_dict = self.message_dao._model_to_dict(full_message or message)
-        return ChatMessageResponse(**msg_dict)
+        return ChatMessageResponse(**full_message)
 
     async def get_history(
         self, user_id: int, chat_id: int, limit: int = 50, offset: int = 0
@@ -39,12 +37,9 @@ class ChatMessagesService:
         if not is_allowed:
             raise ChatAccessDeniedError("У вас нет доступа к истории этого чата")
 
-        messages = await self.message_dao.get_chat_history(
+        return await self.message_dao.get_chat_history(
             chat_id=chat_id, limit=limit, offset=offset
         )
-        return [
-            ChatMessageResponse(**self.message_dao._model_to_dict(m)) for m in messages
-        ]
 
 
 def get_chat_messages_service() -> ChatMessagesService:

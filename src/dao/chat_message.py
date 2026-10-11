@@ -1,11 +1,12 @@
-from typing import List, Optional
+from uuid import UUID
+from typing import List, Dict, Optional
 from sqlalchemy import select, exists
 from sqlalchemy.orm import selectinload
 
 from dependencies.db import DBDependency
 from dao.base import BaseDAO
 from models.chat import ChatMessage, ChatMembership
-from schemas.chat import ChatMessageCreate
+from schemas.chat import ChatMessageCreate, ChatMessageResponse
 
 
 class ChatMessageDAO(BaseDAO[ChatMessage]):
@@ -14,7 +15,7 @@ class ChatMessageDAO(BaseDAO[ChatMessage]):
     def __init__(self, db: DBDependency):
         super().__init__(db)
 
-    async def is_user_in_chat(self, user_id: int, chat_id: int) -> bool:
+    async def is_user_in_chat(self, user_id: UUID, chat_id: UUID) -> bool:
         """
         Проверить, является ли пользователь участником чата.
         Используется для валидации прав перед отправкой сообщения.
@@ -30,12 +31,12 @@ class ChatMessageDAO(BaseDAO[ChatMessage]):
             return bool(result.scalar())
 
     async def create_message(
-        self, sender_id: int, chat_id: int, message_data: ChatMessageCreate
+        self, user_id: UUID, chat_id: UUID, message_data: ChatMessageCreate
     ) -> ChatMessage:
         """Создать и сохранить новое сообщение в чате"""
-        async with self.db.transaction_scope() as session:
+        async with self.db.session_scope() as session:
             new_message = self.model(
-                chat_id=chat_id, sender_id=sender_id, text=message_data.text
+                chat_id=chat_id, user_id=user_id, text=message_data.text
             )
             session.add(new_message)
             await session.flush()
@@ -43,8 +44,8 @@ class ChatMessageDAO(BaseDAO[ChatMessage]):
             return new_message
 
     async def get_chat_history(
-        self, chat_id: int, limit: int = 50, offset: int = 0
-    ) -> List[ChatMessage]:
+        self, chat_id: UUID, limit: int = 50, offset: int = 0
+    ) -> List[ChatMessageResponse]:
         """
         Получить историю сообщений конкретного чата с пагинацией.
         Загружает данные автора сообщения (User) через selectinload.
@@ -64,9 +65,12 @@ class ChatMessageDAO(BaseDAO[ChatMessage]):
                 .offset(offset)
             )
             result = await session.execute(stmt)
-            return list(result.scalars().all())
+            messages = result.scalars().all()
+            return [
+                ChatMessageResponse(**self._model_to_dict(m)) for m in messages
+            ]
 
-    async def get_message_with_sender(self, message_id: int) -> Optional[ChatMessage]:
+    async def get_message_with_sender(self, message_id: UUID) -> Optional[Dict]:
         """Получить одно конкретное сообщение вместе с данными отправителя"""
         async with self.db.read_only_scope() as session:
             stmt = (
@@ -75,4 +79,7 @@ class ChatMessageDAO(BaseDAO[ChatMessage]):
                 .where(self.model.id == message_id)
             )
             result = await session.execute(stmt)
-            return result.scalars().first()
+            message = result.scalars().first()
+            if not message:
+                return None
+            return self._model_to_dict(message)

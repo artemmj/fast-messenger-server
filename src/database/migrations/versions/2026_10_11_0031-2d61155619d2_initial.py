@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: b774d342935b
+Revision ID: 2d61155619d2
 Revises:
-Create Date: 2026-10-10 16:50:46.919424
+Create Date: 2026-10-11 00:31:41.784999
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "b774d342935b"
+revision: str = "2d61155619d2"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -45,8 +45,8 @@ def upgrade() -> None:
     op.create_index(op.f("ix_chat_id"), "chat", ["id"], unique=False)
     op.create_table(
         "user",
-        sa.Column("email", sa.String(length=127), nullable=False),
-        sa.Column("phone", sa.String(length=15), nullable=True),
+        sa.Column("phone", sa.String(length=15), nullable=False),
+        sa.Column("email", sa.String(length=127), nullable=True),
         sa.Column("password_hash", sa.String(length=255), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.Column("is_banned", sa.Boolean(), nullable=False),

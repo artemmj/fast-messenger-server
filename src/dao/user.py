@@ -14,17 +14,31 @@ class UserDAO(BaseDAO[User]):
     def __init__(self, db: DBDependency):
         super().__init__(db)
 
-    async def check_uniques(self, email: str, phone: str | None) -> bool:
+    def _mapping_user_fields(self, user: User) -> Dict:
+        return {
+            "id": user.id,
+            "email": user.email,
+            "phone": user.phone,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at,
+            "is_active": user.is_active,
+            "is_superuser": user.is_superuser,
+            "is_banned": user.is_banned,
+            "is_verified": user.is_verified,
+            "password_hash": user.password_hash,
+        }
+
+    async def check_uniques(self, phone: str, email: str | None) -> bool:
         async with self.db.read_only_scope() as session:
-            conditions = [self.model.email == email]
-            if phone:
-                conditions.append(self.model.phone == phone)
+            conditions = [self.model.phone == phone]
+            if email:
+                conditions.append(self.model.email == email)
             stmt = select(exists().where(or_(*conditions)))
             result = await session.execute(stmt)
             return bool(result.scalar())
 
     async def check_uniques_excluding_user(
-        self, email: str, phone: str | None, exclude_user_id: int
+        self, phone: str, email: str | None, exclude_user_id: int
     ) -> bool:
         async with self.db.read_only_scope() as session:
             conditions = [self.model.email == email]
@@ -36,7 +50,7 @@ class UserDAO(BaseDAO[User]):
             result = await session.execute(stmt)
             return result.scalar()
 
-    async def get_by_email(self, email: str) -> Optional[Dict]:
+    async def get_by_email_or_phone(self, email: str) -> Optional[Dict]:
         async with self.db.session_scope() as session:
             result = await session.execute(
                 select(self.model).where(self.model.email == email)
@@ -44,18 +58,17 @@ class UserDAO(BaseDAO[User]):
             user = result.scalar_one_or_none()
             if not user:
                 return None
-            return {
-                "id": user.id,
-                "email": user.email,
-                "phone": user.phone,
-                "created_at": user.created_at,
-                "updated_at": user.updated_at,
-                "is_active": user.is_active,
-                "is_superuser": user.is_superuser,
-                "is_banned": user.is_banned,
-                "is_verified": user.is_verified,
-                "password_hash": user.password_hash,
-            }
+            return self._mapping_user_fields(user)
+
+    async def get_by_phone(self, phone: str) -> Optional[Dict]:
+        async with self.db.session_scope() as session:
+            result = await session.execute(
+                select(self.model).where(self.model.phone == phone)
+            )
+            user = result.scalar_one_or_none()
+            if not user:
+                return None
+            return self._mapping_user_fields(user)
 
     async def get_paginated_list(
         self, page: int, per_page: int, search: Optional[str] = None
@@ -82,19 +95,5 @@ class UserDAO(BaseDAO[User]):
             )
             users = result.scalars().unique().all()
 
-            items = [
-                {
-                    "id": user.id,
-                    "email": user.email,
-                    "phone": user.phone,
-                    "created_at": user.created_at,
-                    "updated_at": user.updated_at,
-                    "is_active": user.is_active,
-                    "is_superuser": user.is_superuser,
-                    "is_banned": user.is_banned,
-                    "is_verified": user.is_verified,
-                }
-                for user in users
-            ]
-
+            items = [self._mapping_user_fields(user) for user in users]
             return items, total

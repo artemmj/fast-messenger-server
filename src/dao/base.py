@@ -14,12 +14,33 @@ class BaseDAO(Generic[T]):
     def __init__(self, db: DBDependency):
         self.db = db
 
-    def _model_to_dict(self, obj: T) -> Dict[str, Any]:
-        """Конвертация модели в словарь."""
-        return {
-            column.key: getattr(obj, column.key)
-            for column in self.model.__table__.columns
+    def _model_to_dict(self, obj: Any) -> Dict[str, Any]:
+        """
+        Расширенная рекурсивная конвертация модели в словарь.
+        Автоматически обрабатывает загруженные связи (relationships).
+        """
+        if obj is None:
+            return {}
+
+        result = {
+            column.key: getattr(obj, column.key) for column in obj.__table__.columns
         }
+
+        # Рекурсивно подтягиваем только те связи, которые БЫЛИ ЗАГРУЖЕНЫ в сессии
+        from sqlalchemy.orm import attributes
+
+        for key, relationship in obj.__mapper__.relationships.items():
+            if key in attributes.instance_state(obj).unloaded:
+                continue
+            value = getattr(obj, key)
+            if value is None:
+                result[key] = None
+            elif isinstance(value, list):
+                result[key] = [self._model_to_dict(item) for item in value]
+            else:
+                result[key] = self._model_to_dict(value)
+
+        return result
 
     async def count(self) -> int:
         async with self.db.read_only_scope() as session:

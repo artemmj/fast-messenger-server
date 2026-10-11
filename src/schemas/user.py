@@ -2,13 +2,15 @@ import uuid
 import datetime
 from typing import Annotated, Optional  # , List
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, field_validator
+
+from schemas.helpers import normalize_and_validate_russian_phone
 
 
 class UserResponse(BaseModel):
     id: uuid.UUID
-    email: str
-    phone: Optional[str] = None
+    phone: str
+    email: Optional[str] = None
 
     is_active: bool
     is_banned: bool
@@ -29,10 +31,14 @@ class UserPaginatedResponse(BaseModel):
 
 
 class UserCreateRequest(BaseModel):
-    email: str = Field(..., min_length=5, example="john@example.com")
-    phone: Optional[str] = Field(None, min_length=5, example="+79112223344")
-
+    phone: Optional[str] = Field(..., example="+79999999999")
+    email: Optional[str] = Field(None, min_length=5, example="user@example.com")
     password: Annotated[str, StringConstraints(min_length=3, max_length=255)]
+
+    @field_validator("phone", mode="before", check_fields=False)
+    @classmethod
+    def validate_phone(cls, v):
+        return normalize_and_validate_russian_phone(v)
 
 
 class UserUpdateRequest(BaseModel):
@@ -43,3 +49,8 @@ class UserUpdateRequest(BaseModel):
     is_banned: Optional[bool] = None
     is_superuser: Optional[bool] = None
     is_verified: Optional[bool] = None
+
+    @field_validator("phone", mode="before", check_fields=False)
+    @classmethod
+    def validate_phone(cls, v):
+        return normalize_and_validate_russian_phone(v)

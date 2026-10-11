@@ -3,7 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
 from services.chat import ChatService, get_chats_service
-from exceptions.chat import ChatNotFoundError, ChatAccessDeniedError
+from exceptions.chat import (
+    ChatNotFoundError,
+    ChatAccessDeniedError,
+    GroupChatNeedNameError,
+    ChatLimitExceededError,
+)
 from schemas.chat import ChatResponse, ChatCreate
 from schemas.user import UserResponse
 from dependencies.auth import get_current_user
@@ -18,7 +23,12 @@ async def create_group_chat(
     service: ChatService = Depends(get_chats_service),
 ):
     """Создать новый групповой чат (текущий пользователь добавляется автоматически)"""
-    return await service.create_group_chat(data, creator_id=current_user.id)
+    try:
+        return await service.create_group_chat(data, creator_id=current_user.id)
+    except GroupChatNeedNameError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ChatLimitExceededError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/personal/{companion_id}", response_model=ChatResponse)
@@ -66,7 +76,7 @@ async def add_member_to_chat(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.delete("/{chat_id}/members/me", status_code=status.HTTP_200_OK)
+@router.delete("/{chat_id}/members/leave", status_code=status.HTTP_200_OK)
 async def leave_chat(
     chat_id: UUID,
     current_user: UserResponse = Depends(get_current_user),

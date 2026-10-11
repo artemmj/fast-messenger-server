@@ -45,6 +45,7 @@ class ChatMembership(Base, FullMixin):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
     chat_id: Mapped[UUID] = mapped_column(ForeignKey("chat.id", ondelete="CASCADE"))
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    is_admin: Mapped[Boolean] = mapped_column(Boolean, default=False, nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="memberships")
     chat: Mapped["Chat"] = relationship(back_populates="members")

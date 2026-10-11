@@ -12,18 +12,32 @@ from models.chat import ChatType
 
 class ChatCreate(BaseModel):
     type: ChatType = ChatType.GROUP
-    name: Optional[str] = Field(
-        None, description="Название чата (опционально для личных встреч)"
-    )
+    name: Optional[str] = Field(None)
+
+
+class UserMinResponse(BaseModel):
+    id: uuid.UUID
+    phone: str
+    email: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ChatMemberResponse(BaseModel):
+    user_id: uuid.UUID
+    joined_at: datetime
+    is_admin: bool
+    user: UserMinResponse
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ChatResponse(BaseModel):
     id: uuid.UUID
     type: ChatType = ChatType.GROUP
-    name: Optional[str] = Field(
-        None, description="Название чата (опционально для личных встреч)"
-    )
+    name: Optional[str] = Field(None)
     created_at: datetime
+    members: list[ChatMemberResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -62,12 +76,11 @@ class ChatMembershipPaginatedResponse(BaseModel):
 
 class ChatMessageCreate(BaseModel):
     text: str
-    membership_id: uuid.UUID
 
 
 class ChatMessageResponse(BaseModel):
     id: uuid.UUID
-    membership_id: uuid.UUID
+    user_id: uuid.UUID
     text: str
     created_at: datetime
 

@@ -8,3 +8,11 @@ class ChatAccessDeniedError(Exception):
 
 class PersonalChatAlreadyExistsError(Exception):
     pass
+
+
+class GroupChatNeedNameError(Exception):
+    pass
+
+
+class ChatLimitExceededError(Exception):
+    pass
